@@ -26,18 +26,26 @@ resource "aws_ecr_repository" "image" {
   image_scanning_configuration {
     scan_on_push = true
   }
+  provisioner "local-exec" {
+    command = "docker build -t $REPO_URL ./backend && docker push $REPO_URL"
+    environment = {
+      REPO_URL = aws_ecr_repository.image.repository_url
+    }
+  }
 }
 
+resource "null_resource" "image" {
+  provisioner "local-exec" {
+    command = "docker build -t $REPO_URL ./backend && docker push $REPO_URL"
+    environment = {
+      REPO_URL = aws_ecr_repository.image.repository_url
+    }
+  }
+  triggers = {
+    build_number = "${timestamp()}"
+  }
+}
 
 output "repository_url" {
-  value = aws_ecr_repository.image
+  value = "docker build -t ${aws_ecr_repository.image.repository_url} ./backend && docker push ${aws_ecr_repository.image.repository_url}"
 }
-
-##resource "aws_instance" "web" {
-##
-##  provisioner "local-exec" {
-##    command = "docker build ."
-##  }
-##
-##  depends_on = [aws_ecr_repository.frontend]
-##}
